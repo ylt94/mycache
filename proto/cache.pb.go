@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.28.1
 // 	protoc        v3.6.1
-// source: proto/cache.proto
+// source: proto/core.proto
 
 package proto
 

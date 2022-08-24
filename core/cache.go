@@ -1,9 +1,9 @@
-package mcache
+package core
 
 import (
 	"sync"
 
-	"github.com/ylt94/mcache/lru"
+	"github.com/ylt94/mycache/lru"
 )
 
 type cache struct {
@@ -34,4 +34,19 @@ func (c *cache) get(key string) (value ByteView, ok bool) {
 		return v.(ByteView), ok
 	}
 	return
+}
+
+
+func (c *cache) del(key string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.lru == nil {
+		return nil
+	}
+
+	if _, err := c.lru.Del(key); err != nil {
+		return err
+	}
+	return nil
 }

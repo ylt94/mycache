@@ -1,12 +1,12 @@
-package mcache
+package core
 
 import (
 	"errors"
 	"log"
 	"sync"
 
-	"github.com/ylt94/mcache/proto"
-	"github.com/ylt94/mcache/singleflight"
+	"github.com/ylt94/mycache/proto"
+	"github.com/ylt94/mycache/singleflight"
 )
 
 type Getter interface {
@@ -23,7 +23,7 @@ func (f GetterFunc) Get(key string) ([]byte, error) {
 type mcache struct {
 	id        string
 	getter    Getter
-	mainCache cache
+	baseCache cache
 	peers     PeerPicker
 	loader    *singleflight.Group
 }
@@ -39,7 +39,7 @@ func NewMCache(id string, cacheBytes uint64, getter Getter) *mcache {
 	g := &mcache{
 		id:        id,
 		getter:    getter,
-		mainCache: cache{cacheBytes: cacheBytes},
+		baseCache: cache{cacheBytes: cacheBytes},
 		loader:    &singleflight.Group{},
 	}
 	//groups[name] = g
@@ -59,16 +59,43 @@ func (g *mcache) Get(key string) (ByteView, error) {
 		return ByteView{}, errors.New("key is required")
 	}
 
-	if v, ok := g.mainCache.get(key); ok {
+	//从底层获取
+	if v, ok := g.baseCache.get(key); ok {
 		log.Println("[mcache] hit")
 		return v, nil
 	}
-
+	return ByteView{}, nil
 	//从其他节点获取
-	return g.load(key)
+	//return g.load(key)
+}
+
+func (g *mcache) Set(key string, value string)  error {
+	if key == "" {
+		return errors.New("key is required")
+	}
+
+	val := ByteView{b: []byte(value)}
+	g.baseCache.add(key, val)
+	return nil
+	//从其他节点获取
+	//return g.load(key)
+}
+
+func (g *mcache) Del(key string)  error {
+	if key == "" {
+		return errors.New("key is required")
+	}
+
+	if err := g.baseCache.del(key); err != nil {
+		return err
+	}
+	return nil
+	//从其他节点获取
+	//return g.load(key)
 }
 
 func (g *mcache) load(key string) (value ByteView, err error) {
+	//从其他节点获取
 	viewi, err := g.loader.Do(key, func() (interface{}, error) {
 		if g.peers != nil {
 			if peer, ok := g.peers.PickPeer(key); ok {
@@ -76,8 +103,10 @@ func (g *mcache) load(key string) (value ByteView, err error) {
 					return value, nil
 				}
 				log.Println("[mCache] Failed to get from peer:", err)
+				return value, nil
 			}
 		}
+		//如果其他节点也没有，返回自定义的结果
 		return g.getLocally(key)
 	})
 	if err == nil {
@@ -91,6 +120,9 @@ func (g *mcache) getLocally(key string) (ByteView, error) {
 	if err != nil {
 		return ByteView{}, err
 	}
+	if len(bytes) == 0 {
+		return ByteView{}, nil
+	}
 
 	value := ByteView{b: cloneBytes(bytes)}
 	g.populateCache(key, value)
@@ -98,7 +130,7 @@ func (g *mcache) getLocally(key string) (ByteView, error) {
 }
 
 func (g *mcache) populateCache(key string, value ByteView) {
-	g.mainCache.add(key, value)
+	g.baseCache.add(key, value)
 }
 
 //注册http-pool

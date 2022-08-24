@@ -1,6 +1,6 @@
-package mcache
+package core
 
-import "github.com/ylt94/mcache/proto"
+import "github.com/ylt94/mycache/proto"
 
 // PeerPicker is the interface that must be implemented to locate
 // the peer that owns a specific key.
