@@ -4,7 +4,9 @@ package proto;
 option go_package = "./proto";
 
 message Request {
+  string action=1;
   string key = 2;
+  string vale = 3;
 }
 
 message Response {

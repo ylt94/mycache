@@ -54,22 +54,22 @@ func NewMCache(id string, cacheBytes uint64, getter Getter) *mcache {
 // 	return g, ok
 // }
 
-func (g *mcache) Get(key string) (ByteView, error) {
+func (g *mcache) Get(key string) ([]byte, error) {
 	if key == "" {
-		return ByteView{}, errors.New("key is required")
+		return make([]byte, 0), errors.New("key is required")
 	}
 
 	//从底层获取
 	if v, ok := g.baseCache.get(key); ok {
 		log.Println("[mcache] hit")
-		return v, nil
+		return v.ByteSlice(), nil
 	}
-	return ByteView{}, nil
+	return make([]byte, 0), nil
 	//从其他节点获取
 	//return g.load(key)
 }
 
-func (g *mcache) Set(key string, value string)  error {
+func (g *mcache) Set(key string, value string) error {
 	if key == "" {
 		return errors.New("key is required")
 	}
@@ -81,7 +81,7 @@ func (g *mcache) Set(key string, value string)  error {
 	//return g.load(key)
 }
 
-func (g *mcache) Del(key string)  error {
+func (g *mcache) Del(key string) error {
 	if key == "" {
 		return errors.New("key is required")
 	}

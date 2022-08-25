@@ -3,77 +3,68 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/ylt94/mycache/consistenthash"
 	"net/http"
-	"strings"
 	"sync"
+
+	"github.com/ylt94/mycache/consistenthash"
 )
+
 type service struct {
-	addr string
+	addr    string
 	mserver *master
 }
 type master struct {
-	addr string
-	nodes map[string]*mcache
-	mu sync.RWMutex
-	hash *consistenthash.Map
+	addr        string
+	nodeGetters map[string]*NodeGetter //注册节点
+	mu          sync.RWMutex           //hash 锁
+	hash        *consistenthash.Map    //一致性hash
 }
 
 func NewService(addr string, mserver *master) *service {
 	return &service{
-		addr: addr,
+		addr:    addr,
 		mserver: mserver,
 	}
 }
 
-func NewMaster(addr string) *master{
+func NewMaster(addr string) *master {
 	return &master{
 		addr: addr,
 		hash: consistenthash.New(1, nil),
 	}
 }
 
+//对 client端的server
 func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
-	action := values.Get("action")
-	key    := values.Get("key")
-	val := values.Get("value")
-	if action == "" {
-		w.Write([]byte("action is required"))
-	}
-
+	key := values.Get("key")
 	if key == "" {
 		w.Write([]byte("key is required"))
 	}
 
-	if action == "set" || val == "" {
-		w.Write([]byte("val is required"))
+	nodeGetter, err := m.mserver.getNode(key)
+	if err != nil {
+		w.Write([]byte("get no err:" + err.Error()))
 	}
-	if strings.ToLower(action) == "set" {
-
-	} else if strings.ToLower(action) == "get" {
-
-	} else if strings.ToLower(action) == "del" {
-	}
-
+	nodeGetter.GetByHTTP(w, r)
 }
 
 func (m *master) loadNode(name string, cache *mcache) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.hash.Add(name)
-	if m.nodes == nil {
-		m.nodes = make(map[string]*mcache)
+	if m.nodeGetters == nil {
+		m.nodeGetters = make(map[string]*NodeGetter)
 	}
-	m.nodes[name] = cache
+	m.nodeGetters[name] = &NodeGetter{baseURL: name}
 }
 
-func (m *master) getNode(key string) (*mcache, error) {
+func (m *master) getNode(key string) (*NodeGetter, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	name := m.hash.Get(key)
-	if cache, ok := m.nodes[name]; ok {
-		return cache,nil
+	if getter, ok := m.nodeGetters[name]; ok {
+		return getter, nil
 	}
 	return nil, errors.New("no such cache node:" + name)
 }
@@ -89,7 +80,7 @@ func (m *master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//注册节点
-	cache := NewMCache(name, 2 << 10, nil)
+	cache := NewMCache(name, 2<<10, nil)
 	m.loadNode(name, cache)
 	//TODO 心跳检测
 	w.Write([]byte("success"))
