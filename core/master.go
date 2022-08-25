@@ -49,7 +49,7 @@ func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	nodeGetter.GetByHTTP(w, r)
 }
 
-func (m *master) loadNode(name string, cache *mcache) {
+func (m *master) loadNode(name string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.hash.Add(name)
@@ -69,6 +69,7 @@ func (m *master) getNode(key string) (*NodeGetter, error) {
 	return nil, errors.New("no such cache node:" + name)
 }
 
+//处理节点注册
 func (m *master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 	name := values.Get("name")
@@ -80,8 +81,18 @@ func (m *master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//注册节点
-	cache := NewMCache(name, 2<<10, nil)
-	m.loadNode(name, cache)
+	m.loadNode(name)
 	//TODO 心跳检测
 	w.Write([]byte("success"))
+}
+
+func ServiceStart(srv *service) {
+	go func() {
+		http.Handle("/", srv)
+		http.ListenAndServe(srv.addr, nil)
+	}()
+	go func() {
+		http.Handle("/", srv.mserver)
+		http.ListenAndServe(srv.mserver.addr, nil)
+	}()
 }

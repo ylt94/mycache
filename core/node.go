@@ -89,6 +89,28 @@ func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *NodeServer) register(masterAddr string) {
+	url := masterAddr + "/?name=" + h.self
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		panic(fmt.Errorf("node register returned:%v", resp.Status))
+	}
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(fmt.Errorf("node register reading response  body: %v", err))
+	}
+
+	if string(bytes) != "success" {
+		panic("node register returned:"+string(bytes))
+	}
+	log.Println("node:"+h.self+"register success")
+}
+
 // //加载节点地址-一致性hash环
 // func (h *NodeServer) Set(peers ...string) {
 // 	h.mu.Lock()
@@ -167,7 +189,10 @@ func (g *NodeGetter) GetByHTTP(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func ServerStart(srv *NodeServer) {
+func ServerStart(srv *NodeServer, mAddr string) {
+	//去master注册
+	srv.register(mAddr)
+	//请求处理
 	http.Handle("/", srv)
 	http.ListenAndServe(srv.self, nil)
 }
