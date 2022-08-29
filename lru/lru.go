@@ -26,6 +26,7 @@ type Value interface {
 func New(maxBytes uint64, onRemoved func(key string, value string)) *Cache {
 	return &Cache{
 		maxBytes:  maxBytes,
+		list: list.New(),
 		data:      make(map[string]*list.Element),
 		onRemoved: onRemoved,
 	}

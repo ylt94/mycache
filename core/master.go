@@ -39,7 +39,12 @@ func NewMaster(addr string) *master {
 func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 	action := values.Get("action")
+	log.Println("string:--------", r.URL.String())
+	log.Println("path:--------", r.URL.Path)
+	log.Println("ForceQuery:--------", r.URL.ForceQuery)
+	log.Println("RequestURI:--------", r.Referer())
 	if action == "register" {
+		log.Println("host:--------",values.Get("name"))
 		m.mserver.ServeHTTP(w, r)
 		return
 	}
@@ -52,6 +57,7 @@ func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Write([]byte("get no err:" + err.Error()))
 	}
+	log.Println("111111111")
 	err = nodeGetter.GetByHTTP(w, r)
 	if err != nil {
 		log.Println("node error: " + err.Error())

@@ -45,19 +45,23 @@ func (h *NodeServer) Log(format string, v ...interface{}) {
 
 func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
+	log.Println("url----", r.Referer())
 	action := values.Get("action")
 	key := values.Get("key")
 	val := values.Get("value")
 	if action == "" {
 		w.Write([]byte("action is required"))
+		return
 	}
 
 	if key == "" {
 		w.Write([]byte("key is required"))
+		return
 	}
 
-	if action == "set" || val == "" {
-		w.Write([]byte("val is required"))
+	if action == "set" && val == "" {
+		w.Write([]byte("value is required"))
+		return
 	}
 
 	var err error
@@ -66,11 +70,13 @@ func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err = h.mainCache.Set(key, val)
 		if err != nil {
 			w.Write([]byte("cache set error:" + err.Error()))
+			return
 		}
 	} else if strings.ToLower(action) == "get" { //get 命令
 		body, err := h.mainCache.Get(key)
 		if err != nil {
 			w.Write([]byte("cache get error:" + err.Error()))
+			return
 		}
 		//proto 编码
 		//body, err := proto.Marshal(&mproto.Response{Value: view.ByteSlice()})
@@ -85,6 +91,7 @@ func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.mainCache.Del(key)
 		if err != nil {
 			w.Write([]byte("cache del error:" + err.Error()))
+			return
 		}
 	}
 }
@@ -168,7 +175,7 @@ func (g *NodeGetter) Get(in *mproto.Request, out *mproto.Response) error {
 }
 
 func (g *NodeGetter) GetByHTTP(w http.ResponseWriter, r *http.Request) error {
-	u := fmt.Sprintf("%v%v", g.baseURL, url.QueryEscape(r.URL.Query().Get("key")))
+	u := g.baseURL + r.URL.String()
 	log.Println("start get data from", u)
 	res, err := http.Get(u)
 	if err != nil {
