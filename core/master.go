@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 
@@ -37,6 +38,11 @@ func NewMaster(addr string) *master {
 //对 client端的server
 func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
+	action := values.Get("action")
+	if action == "register" {
+		m.mserver.ServeHTTP(w, r)
+		return
+	}
 	key := values.Get("key")
 	if key == "" {
 		w.Write([]byte("key is required"))
@@ -46,7 +52,10 @@ func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Write([]byte("get no err:" + err.Error()))
 	}
-	nodeGetter.GetByHTTP(w, r)
+	err = nodeGetter.GetByHTTP(w, r)
+	if err != nil {
+		log.Println("node error: " + err.Error())
+	}
 }
 
 func (m *master) loadNode(name string) {
@@ -75,24 +84,21 @@ func (m *master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := values.Get("name")
 	if name == "" {
 		w.Write([]byte("node's name is required"))
+		return
 	}
-	if _, err := m.getNode(name); err != nil {
+	if _, err := m.getNode(name); err == nil {
 		w.Write([]byte(fmt.Sprintf("node name:%s is exists", name)))
+		return
 	}
 
 	//注册节点
 	m.loadNode(name)
 	//TODO 心跳检测
+
 	w.Write([]byte("success"))
 }
 
 func ServiceStart(srv *service) {
-	go func() {
-		http.Handle("/", srv)
-		http.ListenAndServe(srv.addr, nil)
-	}()
-	go func() {
-		http.Handle("/", srv.mserver)
-		http.ListenAndServe(srv.mserver.addr, nil)
-	}()
+	http.Handle("/", srv)
+	http.ListenAndServe(srv.addr[7:], nil)
 }
