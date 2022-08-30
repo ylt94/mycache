@@ -9,7 +9,7 @@ import (
 type cache struct {
 	mu         sync.RWMutex
 	lru        *lru.Cache
-	cacheBytes uint64
+	cacheBytes int64
 }
 
 func (c *cache) add(key string, value ByteView) {
@@ -35,7 +35,6 @@ func (c *cache) get(key string) (value ByteView, ok bool) {
 	}
 	return
 }
-
 
 func (c *cache) del(key string) error {
 	c.mu.Lock()

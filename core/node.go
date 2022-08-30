@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -45,12 +46,15 @@ func (h *NodeServer) Log(format string, v ...interface{}) {
 
 func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
-	log.Println("url----", r.Referer())
 	action := values.Get("action")
 	key := values.Get("key")
 	val := values.Get("value")
 	if action == "" {
 		w.Write([]byte("action is required"))
+		return
+	}
+	if action == "ping" {
+		w.Write([]byte("pong"))
 		return
 	}
 
@@ -88,7 +92,7 @@ func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		//w.Header().Set("Content-Type", "application/octet-stream")
 		w.Write(body)
 	} else if strings.ToLower(action) == "del" { //del 命令
-		h.mainCache.Del(key)
+		err = h.mainCache.Del(key)
 		if err != nil {
 			w.Write([]byte("cache del error:" + err.Error()))
 			return
@@ -193,6 +197,34 @@ func (g *NodeGetter) GetByHTTP(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("reading response  body: %v", err)
 	}
 	w.Write(bytes)
+	return nil
+}
+
+//心跳检测
+func (g *NodeGetter) heartBeat(timeOut time.Duration) error {
+	u := g.baseURL + "/?action=ping"
+	log.Println("start heart beat to", u)
+
+	client := http.Client{Timeout: timeOut}
+	res, err := client.Get(u)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("heart beat return error: %v", res.Status)
+	}
+
+	bytes, err := ioutil.ReadAll(res.Body)
+	log.Println("node heart beat returned:", string(bytes))
+	if err != nil {
+		return fmt.Errorf("heart beat reading reponse body error:%v", err)
+	}
+	if string(bytes) != "pong" {
+		return fmt.Errorf("heart beat reading reponse body content error:%v", err)
+	}
 	return nil
 }
 

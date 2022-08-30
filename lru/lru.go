@@ -7,8 +7,8 @@ import (
 
 //底层数据存储
 type Cache struct {
-	maxBytes  uint64
-	usedBytes uint64
+	maxBytes  int64
+	usedBytes int64
 	list      *list.List
 	data      map[string]*list.Element
 	onRemoved func(key string, value string)
@@ -23,10 +23,10 @@ type Value interface {
 	Len() int
 }
 
-func New(maxBytes uint64, onRemoved func(key string, value string)) *Cache {
+func New(maxBytes int64, onRemoved func(key string, value string)) *Cache {
 	return &Cache{
 		maxBytes:  maxBytes,
-		list: list.New(),
+		list:      list.New(),
 		data:      make(map[string]*list.Element),
 		onRemoved: onRemoved,
 	}
@@ -39,7 +39,7 @@ func (c *Cache) Add(key string, value Value) {
 		if e.Value != v {
 			kv := e.Value.(*entry)
 			//已用内存计算
-			c.usedBytes += uint64(value.Len() - kv.value.Len())
+			c.usedBytes += int64(value.Len() - kv.value.Len())
 			e.Value = v
 		}
 		//lru策略
@@ -47,6 +47,7 @@ func (c *Cache) Add(key string, value Value) {
 	} else {
 		elemet := c.list.PushBack(v)
 		c.data[key] = elemet
+		c.usedBytes += int64(len(key) + value.Len())
 	}
 	//内存不足清理数据
 	if c.maxBytes != 0 && c.usedBytes > c.maxBytes {
@@ -74,7 +75,7 @@ func (c *Cache) Del(key string) (bool, error) {
 
 	//计算使用内存
 	kv := e.Value.(*entry)
-	c.usedBytes -= uint64(len(kv.key) + kv.value.Len())
+	c.usedBytes -= int64(len(kv.key) + kv.value.Len())
 	return true, nil
 }
 
@@ -89,6 +90,7 @@ func (c *Cache) clearOld() {
 		}
 		kv := e.Value.(*entry)
 		delete(c.data, kv.key)
-		c.usedBytes -= uint64(len(kv.key) + kv.value.Len())
+		c.list.Remove(e)
+		c.usedBytes -= int64(len(kv.key) + kv.value.Len())
 	}
 }

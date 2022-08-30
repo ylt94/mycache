@@ -35,7 +35,7 @@ var (
 	mainCache *mcache
 )
 
-func NewMCache(id string, cacheBytes uint64, getter Getter) *mcache {
+func NewMCache(id string, cacheBytes int64, getter Getter) *mcache {
 	g := &mcache{
 		id:        id,
 		getter:    getter,
