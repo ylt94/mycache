@@ -104,7 +104,7 @@ func (m *master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	//TODO 心跳检测
+	//心跳检测
 	go m.heartBeat(name)
 
 	w.Write([]byte("success"))
@@ -152,9 +152,11 @@ func (m *master) dieNodeHandler() {
 
 func ServiceStart(srv *service) {
 	go srv.mserver.dieNodeHandler()
+
 	mx := http.NewServeMux()
 	mx.Handle("/", srv.mserver)
 	go http.ListenAndServe(srv.mserver.addr[7:], mx)
+
 	http.Handle("/", srv)
 	http.ListenAndServe(srv.addr[7:], nil)
 }

@@ -62,11 +62,6 @@ func (h *NodeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if action == "set" && val == "" {
-		w.Write([]byte("value is required"))
-		return
-	}
-
 	var err error
 	//TODO 反射
 	if strings.ToLower(action) == "set" { //set 命令
@@ -120,34 +115,6 @@ func (h *NodeServer) register(masterAddr string) {
 	}
 	log.Println("node:" + h.self + " register success")
 }
-
-// //加载节点地址-一致性hash环
-// func (h *NodeServer) Set(peers ...string) {
-// 	h.mu.Lock()
-// 	defer h.mu.Unlock()
-
-// 	h.peers = consistenthash.New(defaultReplicas, nil)
-// 	h.peers.Add(peers...)
-
-// 	h.NodeGetters = make(map[string]*NodeGetter, len(peers))
-// 	for _, peer := range peers {
-// 		h.NodeGetters[peer] = &NodeGetter{baseURL: peer + h.basePath}
-// 	}
-// }
-
-// //通过对key的hash，找到节点，返回获取节点getter
-// func (h *NodeServer) PickPeer(key string) (PeerGetter, bool) {
-// 	h.mu.Lock()
-// 	defer h.mu.Unlock()
-
-// 	if peer := h.peers.Get(key); peer != "" && peer != h.self {
-// 		h.Log("Pick peer %s", peer)
-// 		return h.NodeGetters[peer], true
-// 	}
-// 	return nil, false
-// }
-
-//var _ PeerPicker = (*NodeServer)(nil)
 
 //从节点获取value proto
 func (g *NodeGetter) Get(in *mproto.Request, out *mproto.Response) error {
