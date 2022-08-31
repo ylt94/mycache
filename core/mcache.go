@@ -1,7 +1,7 @@
 package core
 
 import (
-	"errors"
+	"fmt"
 	"log"
 
 	"github.com/ylt94/mycache/singleflight"
@@ -43,7 +43,7 @@ func NewMCache(id string, cacheBytes int64, getter Getter) *mcache {
 
 func (g *mcache) Get(key string) ([]byte, error) {
 	if key == "" {
-		return make([]byte, 0), errors.New("key is required")
+		return make([]byte, 0), fmt.Errorf("key is required")
 	}
 
 	//从底层获取
@@ -56,7 +56,7 @@ func (g *mcache) Get(key string) ([]byte, error) {
 
 func (g *mcache) Set(key string, value string) error {
 	if key == "" {
-		return errors.New("key is required")
+		return fmt.Errorf("key is required")
 	}
 
 	val := ByteView{b: []byte(value)}
@@ -66,7 +66,7 @@ func (g *mcache) Set(key string, value string) error {
 
 func (g *mcache) Del(key string) error {
 	if key == "" {
-		return errors.New("key is required")
+		return fmt.Errorf("key is required")
 	}
 
 	if err := g.baseCache.del(key); err != nil {

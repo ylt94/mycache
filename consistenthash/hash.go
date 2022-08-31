@@ -1,7 +1,7 @@
 package consistenthash
 
 import (
-	"errors"
+	"fmt"
 	"hash/crc32"
 	"sort"
 	"strconv"
@@ -61,7 +61,7 @@ func (m *Map) Get(key string) string {
 
 func (m *Map) Delete(key string) error {
 	if len(key) == 0 {
-		return errors.New("deleted hash key is required")
+		return fmt.Errorf("deleted hash key is required")
 	}
 
 	m.mu.Lock()

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -55,10 +54,10 @@ func (m *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	nodeGetter, err := m.mserver.getNode(key)
 	if err != nil {
-		w.Write([]byte("get no err:" + err.Error()))
+		w.Write([]byte("get node err:" + err.Error()))
 	}
 
-	err = nodeGetter.GetByHTTP(w, r)
+	err = nodeGetter.HandleByHTTP(w, r)
 	if err != nil {
 		log.Println("node error: " + err.Error())
 	}
@@ -86,7 +85,7 @@ func (m *master) getNode(key string) (*NodeGetter, error) {
 	if getter, ok := m.nodeGetters[name]; ok {
 		return getter, nil
 	}
-	return nil, errors.New("no such cache node:" + name)
+	return nil, fmt.Errorf("no such cache node:" + name)
 }
 
 //处理节点注册

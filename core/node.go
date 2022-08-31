@@ -117,7 +117,7 @@ func (h *NodeServer) register(masterAddr string) {
 }
 
 //从节点获取value proto
-func (g *NodeGetter) Get(in *mproto.Request, out *mproto.Response) error {
+func (g *NodeGetter) Handle(in *mproto.Request, out *mproto.Response) error {
 	u := fmt.Sprintf("%v%v", g.baseURL, url.QueryEscape(in.GetKey()))
 	log.Println("start get data from", u)
 	res, err := http.Get(u)
@@ -144,7 +144,7 @@ func (g *NodeGetter) Get(in *mproto.Request, out *mproto.Response) error {
 	return nil
 }
 
-func (g *NodeGetter) GetByHTTP(w http.ResponseWriter, r *http.Request) error {
+func (g *NodeGetter) HandleByHTTP(w http.ResponseWriter, r *http.Request) error {
 	u := g.baseURL + r.URL.String()
 	log.Println("start get data from", u)
 	res, err := http.Get(u)

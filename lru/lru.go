@@ -2,7 +2,7 @@ package lru
 
 import (
 	"container/list"
-	"errors"
+	"fmt"
 )
 
 //底层数据存储
@@ -67,7 +67,7 @@ func (c *Cache) Get(key string) (value Value, ok bool) {
 func (c *Cache) Del(key string) (bool, error) {
 	e, ok := c.data[key]
 	if !ok {
-		return true, errors.New("data not exists")
+		return true, fmt.Errorf("data not exists")
 	}
 	//删除信息
 	delete(c.data, key)

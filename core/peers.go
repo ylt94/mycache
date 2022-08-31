@@ -10,5 +10,5 @@ type PeerPicker interface {
 
 // PeerGetter is the interface that must be implemented by a peer.
 type PeerGetter interface {
-	Get(in *proto.Request, out *proto.Response) error
+	Handle(in *proto.Request, out *proto.Response) error
 }
