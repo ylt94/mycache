@@ -68,7 +68,7 @@ func (m *master) registerNode(name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.nodeGetters[name]; ok {
-		return errors.New(fmt.Sprintf("node name:%s is exists", name))
+		return fmt.Errorf(fmt.Sprintf("node name:%s is exists", name))
 	}
 	m.hash.Add(name)
 	if m.nodeGetters == nil {

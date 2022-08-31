@@ -7,23 +7,22 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/ylt94/mycache/consistenthash"
 	mproto "github.com/ylt94/mycache/proto"
 )
 
 const defaultBasePath = "/node/"
-const defaultReplicas = 50
+
+//const defaultReplicas = 50
 
 type NodeServer struct {
-	self        string
-	basePath    string
-	mu          sync.Mutex
-	peers       *consistenthash.Map
+	self     string
+	basePath string
+	//mu          sync.Mutex
+	//peers       *consistenthash.Map
 	NodeGetters map[string]*NodeGetter
 	mainCache   *mcache
 }

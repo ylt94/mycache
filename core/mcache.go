@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"log"
-	"sync"
 
 	"github.com/ylt94/mycache/proto"
 	"github.com/ylt94/mycache/singleflight"
@@ -29,10 +28,9 @@ type mcache struct {
 }
 
 var (
-	//TODO 主从切换
-	mu sync.RWMutex
-	//groups = make(map[string]*Group)
-	mainCache *mcache
+//TODO 主从切换
+//mu sync.RWMutex
+//groups = make(map[string]*Group)
 )
 
 func NewMCache(id string, cacheBytes int64, getter Getter) *mcache {
@@ -43,7 +41,6 @@ func NewMCache(id string, cacheBytes int64, getter Getter) *mcache {
 		loader:    &singleflight.Group{},
 	}
 	//groups[name] = g
-	mainCache = g
 	return g
 }
 
